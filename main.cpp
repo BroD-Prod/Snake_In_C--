@@ -1,4 +1,6 @@
 #include <iostream>
+#include <deque>
+#include <ncurses.h>
 
 struct Position{
     int row;
@@ -86,23 +88,26 @@ class Map {
         const int width {45};
 
     public:
-        void createMap(Snake& snake){            
-            std::cout << "\033[" << 1 << ";" << 1 << "H";
+        bool createMap(Snake& snake){
+            clear();
             Position snakeHead = snake.getHeadPosition();
             const std::deque <Position> snakeBody = snake.getSnakeBody();
+            if(snakeHead.row <= 0 || snakeHead.row >= height - 1 || snakeHead.col <= 0 || snakeHead.col >= width - 1){
+                return false;
+            }
+            move(0, 0);
             for(int row {0}; row < height; ++row){
                 for(int col {0}; col < width; ++col){
                     const auto& prevPosition = snakeBody.front();
-                    if (row == snakeHead.row &&
-                        col == snakeHead.col) {
+                    if (row == snakeHead.row && col == snakeHead.col) {
                             if (prevPosition.row == snakeHead.row && prevPosition.col == snakeHead.col - 1) {
-                                std::cout << '>';
+                                printw(">");
                             } else if (prevPosition.row == snakeHead.row && prevPosition.col == snakeHead.col + 1) {
-                                std::cout << '<';
+                                printw("<");
                             } else if (prevPosition.row == snakeHead.row - 1 && prevPosition.col == snakeHead.col) {
-                                std::cout << 'v';
+                                printw("v");
                             } else if (prevPosition.row == snakeHead.row + 1 && prevPosition.col == snakeHead.col) {
-                                std::cout << '^';
+                                printw("^");
                             }
                         }
                     else{
@@ -114,38 +119,63 @@ class Map {
                             }
                         }
                         if(isBodyPart){
-                            std::cout << '0';
+                            printw("0");
                         }
                         else if(row == 0 || row == height - 1){
-                            std::cout << "-";
+                            printw("-");
                         }   
                         else if(col == 0 || col == width - 1){
-                            std::cout << "|";
+                            printw("|");
                         }
                         else{
-                            std::cout << "~";
+                            printw("~");
                         }
                     }
                 }
-                std::cout << std::endl;
+                printw("\n");
             }
-            }
-        };
+            refresh();
+            return true;
+        }
+};
+    
 
 int main(){
+    initscr();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+    curs_set(0);
+    timeout(200);
+
     startPosition start_position;
     Snake snake(start_position.snakeStartRow, start_position.snakeStartCol);
     Map snakeMap;
-    snakeMap.createMap(snake);
-    char input;
-    while (true)
+
+    char currentDir = 'a';
+    bool gameRunning = true;
+
+    while (gameRunning)
     {
-        std::cin >> input;
-        if(sizeof(input) != 1){
-            input = '\0';
+        int input = getch();
+        if(input != ERR) {
+            if(input == 'w' || input == 's' || input == 'a' || input == 'd') {
+                currentDir = input;
+            } else if(input == 'q') {
+                break; 
+            }
         }
-        snake.MoveSnake(input);
-        snakeMap.createMap(snake);
+
+        snake.MoveSnake(currentDir);
+        gameRunning = snakeMap.createMap(snake);
     }
+
+    clear();
+    printw("Game Over!\nPress any key to exit.");
+    refresh();
+    timeout(-1);
+    getch();
+
+    endwin();
     return 0;
 }
