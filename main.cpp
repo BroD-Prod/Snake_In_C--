@@ -13,32 +13,48 @@ struct startPosition{
 class Snake {
     private:
         Position head;
-        int length {3};
+        std::deque <Position> snakeBody{};
         char input;
 
     public:
-        int getLength() const{
-            return length;
+        int getSnakeSize(){
+            return snakeBody.size();
         }
-    
+
+        const std::deque <Position>& getSnakeBody() const{
+            return snakeBody;
+
+        }
+
         Snake(int startRow, int startCol){
             head.row = startRow;
             head.col = startCol;
+
+            snakeBody.push_back({startRow, startCol + 1});
+            snakeBody.push_back({startRow, startCol + 2});
         }
         
         void moveRight(){
+            snakeBody.push_front(head);
+            snakeBody.pop_back();
             ++head.col;
         }
         
         void moveLeft(){
+            snakeBody.push_front(head);
+            snakeBody.pop_back();
             --head.col;
         }
 
         void moveUp(){
+            snakeBody.push_front(head);
+            snakeBody.pop_back();
             --head.row;
         }
 
         void moveDown(){
+            snakeBody.push_front(head);
+            snakeBody.pop_back();
             ++head.row;
         }
 
@@ -70,34 +86,51 @@ class Map {
         const int width {45};
 
     public:
-        void createMap(const Snake& snake){            
+        void createMap(Snake& snake){            
             std::cout << "\033[" << 1 << ";" << 1 << "H";
             Position snakeHead = snake.getHeadPosition();
+            const std::deque <Position> snakeBody = snake.getSnakeBody();
             for(int row {0}; row < height; ++row){
                 for(int col {0}; col < width; ++col){
-                    if(row == 0 || row == height - 1){
-                        std::cout << "-";
-                    }
-                     else if (row == snakeHead.row &&
+                    const auto& prevPosition = snakeBody.front();
+                    if (row == snakeHead.row &&
                         col == snakeHead.col) {
-                        std::cout << "<"; 
-                    }
-                    else if (row == snakeHead.row &&
-                        col <= snakeHead.col + snake.getLength() &&
-                        col > snakeHead.col) {
-                        std::cout << "o"; 
-                    }
-                    else if(col == 0 || col == width - 1){
-                        std::cout << "|";
-                    }
+                            if (prevPosition.row == snakeHead.row && prevPosition.col == snakeHead.col - 1) {
+                                std::cout << '>';
+                            } else if (prevPosition.row == snakeHead.row && prevPosition.col == snakeHead.col + 1) {
+                                std::cout << '<';
+                            } else if (prevPosition.row == snakeHead.row - 1 && prevPosition.col == snakeHead.col) {
+                                std::cout << 'v';
+                            } else if (prevPosition.row == snakeHead.row + 1 && prevPosition.col == snakeHead.col) {
+                                std::cout << '^';
+                            }
+                        }
                     else{
-                        std::cout << "~";
+                        bool isBodyPart = false;
+                        for(const auto& bodyPart : snakeBody){
+                            if(row == bodyPart.row && col == bodyPart.col){
+                                isBodyPart = true;
+                                break;
+                            }
+                        }
+                        if(isBodyPart){
+                            std::cout << '0';
+                        }
+                        else if(row == 0 || row == height - 1){
+                            std::cout << "-";
+                        }   
+                        else if(col == 0 || col == width - 1){
+                            std::cout << "|";
+                        }
+                        else{
+                            std::cout << "~";
+                        }
                     }
                 }
                 std::cout << std::endl;
             }
-        }
-};
+            }
+        };
 
 int main(){
     startPosition start_position;
