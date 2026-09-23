@@ -17,6 +17,7 @@ class Snake {
         Position head;
         std::deque <Position> snakeBody{};
         char input;
+        int length;
 
     public:
         int getSnakeSize(){
@@ -25,7 +26,6 @@ class Snake {
 
         const std::deque <Position>& getSnakeBody() const{
             return snakeBody;
-
         }
 
         Snake(int startRow, int startCol){
@@ -41,10 +41,20 @@ class Snake {
             snakeBody.pop_back();
             ++head.col;
         }
+
+        void growRight(){
+            snakeBody.push_front(head);
+            ++head.col;
+        }
         
         void moveLeft(){
             snakeBody.push_front(head);
             snakeBody.pop_back();
+            --head.col;
+        }
+
+        void growLeft(){
+            snakeBody.push_front(head);
             --head.col;
         }
 
@@ -54,25 +64,35 @@ class Snake {
             --head.row;
         }
 
+        void growUp(){
+            snakeBody.push_front(head);
+            --head.row;
+        }
+
         void moveDown(){
             snakeBody.push_front(head);
             snakeBody.pop_back();
             ++head.row;
         }
 
-        void MoveSnake(char input){
+        void growDown(){
+            snakeBody.push_front(head);
+            ++head.row;
+        }
+
+        void MoveSnake(char input, bool hasEatenFruit){
             switch(input){
                 case 'w':
-                    moveUp();
+                    if(hasEatenFruit) growUp(); else moveUp();
                     break;
                 case 's':
-                    moveDown();
+                    if(hasEatenFruit) growDown(); else moveDown();
                     break;
                 case 'd':
-                    moveRight();
+                    if(hasEatenFruit) growRight(); else moveRight();
                     break;
                 case 'a':
-                    moveLeft();
+                    if(hasEatenFruit) growLeft(); else moveLeft();
                     break;
             }
         }
@@ -86,8 +106,19 @@ class Map {
     private:
         const int height {15};
         const int width {45};
+        Position fruit {rand() % (14 + 1 - 1), rand() % (44 + 1 - 1)};
 
     public:
+        
+        Position getFruitpPosition(){
+            return fruit;
+        }
+
+         void generateNewFruit(){
+            fruit.row = rand() % (14 + 1 - 1);
+            fruit.col = rand() % (44 + 1 - 1);
+        }
+
         bool createMap(Snake& snake){
             clear();
             Position snakeHead = snake.getHeadPosition();
@@ -95,6 +126,7 @@ class Map {
             if(snakeHead.row <= 0 || snakeHead.row >= height - 1 || snakeHead.col <= 0 || snakeHead.col >= width - 1){
                 return false;
             }
+
             move(0, 0);
             for(int row {0}; row < height; ++row){
                 for(int col {0}; col < width; ++col){
@@ -126,6 +158,9 @@ class Map {
                         }   
                         else if(col == 0 || col == width - 1){
                             printw("|");
+                        }
+                        else if(col == fruit.col && row == fruit.row){
+                            printw("o");
                         }
                         else{
                             printw("~");
@@ -166,7 +201,28 @@ int main(){
             }
         }
 
-        snake.MoveSnake(currentDir);
+        Position nextHeadPosition = snake.getHeadPosition();
+
+        if(currentDir == 'w'){
+            nextHeadPosition.row--;
+        }
+        if(currentDir == 's'){
+            nextHeadPosition.row++;
+        }
+        if(currentDir == 'a'){
+            nextHeadPosition.col--;
+        }
+        if(currentDir == 'd'){
+            nextHeadPosition.col++;
+        }
+
+        bool hasEatenFruit{};
+        if(nextHeadPosition.row == snakeMap.getFruitpPosition().row && nextHeadPosition.col == snakeMap.getFruitpPosition().col){
+            hasEatenFruit = true;
+            snakeMap.generateNewFruit();
+        }
+
+        snake.MoveSnake(currentDir, hasEatenFruit);
         gameRunning = snakeMap.createMap(snake);
     }
 
