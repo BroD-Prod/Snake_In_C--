@@ -123,6 +123,12 @@ class Map {
             clear();
             Position snakeHead = snake.getHeadPosition();
             const std::deque <Position> snakeBody = snake.getSnakeBody();
+            for(int i{0}; i < snakeBody.size(); ++i){
+                if(snakeHead.row == snakeBody[i].row && snakeHead.col == snakeBody[i].col){
+                    return false;
+                }
+            }
+            
             if(snakeHead.row <= 0 || snakeHead.row >= height - 1 || snakeHead.col <= 0 || snakeHead.col >= width - 1){
                 return false;
             }
